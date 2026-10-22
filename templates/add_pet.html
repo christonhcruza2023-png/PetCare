@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Add New Pet</h1>
+    <p class="page-subtitle">Register a new animal record in the PetCare registry.</p>
+  </div>
+  <a class="btn btn--ghost" href="{{ url_for('pet_list') }}">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to records
+  </a>
+</div>
+
+{% if errors %}
+<div class="alert alert--error" role="alert">
+  <strong>Please fix the following:</strong>
+  <ul>
+    {% for field, message in errors.items() %}
+      <li>{{ message }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<form class="panel pet-form" id="pet-form" method="post" action="{{ url_for('pet_create') }}" enctype="multipart/form-data" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+  <fieldset class="form-section">
+    <legend class="form-section__title">Pet Information</legend>
+    <div class="form-grid">
+      <div class="field">
+        <label for="pet_name">Pet Name <abbr title="required">*</abbr></label>
+        <input type="text" id="pet_name" name="pet_name" value="{{ form.get('pet_name', '') }}" required maxlength="80" placeholder="e.g. Buddy" />
+        {% if errors.get('pet_name') %}<span class="field__error">{{ errors.pet_name }}</span>{% endif %}
+      </div>
+
+      <div class="field">
+        <label for="animal_type">Animal Type <abbr title="required">*</abbr></label>
+        <select id="animal_type" name="animal_type" required>
+          <option value="">Select type…</option>
+          {% for t in ANIMAL_TYPES %}
+            <option value="{{ t }}" {{ 'selected' if form.get('animal_type') == t }}>{{ t }}</option>
+          {% endfor %}
+        </select>
+        {% if errors.get('animal_type') %}<span class="field__error">{{ errors.animal_type }}</span>{% endif %}
+      </div>
+
+      <div class="field">
+        <label for="breed">Breed</label>
+        <input type="text" id="breed" name="breed" value="{{ form.get('breed', '') }}" maxlength="80" placeholder="e.g. Golden Retriever" />
+        {% if errors.get('breed') %}<span class="field__error">{{ errors.breed }}</span>{% endif %}
+      </div>
+
+      <div class="field">
+        <label for="sex">Sex</label>
+        <select id="sex" name="sex">
+          <option value="">Select…</option>
+          {% for s in SEX_OPTIONS %}
+            <option value="{{ s }}" {{ 'selected' if form.get('sex') == s }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+        {% if errors.get('sex') %}<span class="field__error">{{ errors.sex }}</span>{% endif %}
+      </div>
+
+      <div class="field">
+        <label for="date_of_birth">Date of Birth</label>
+        <input type="date" id="date_of_birth" name="date_of_birth" value="{{ form.get('date_of_birth', '') }}" max="{{ TODAY }}" />
+        {% if errors.get('date_of_birth') %}<span class="field__error">{{ errors.date_of_birth }}</span>{% endif %}
+      </div>
+
+      <div class="field">
+        <label for="estimated_age">Estimated Age <span class="hint">(when DOB is unknown)</span></label>
+        <input type="text" id="estimated_age" name="estimated_age" value="{{ form.get('estimated_age', '') }}" maxlength="40" placeholder="e.g. 3 years" />
+        {% if errors.get('estimated_age') %}<span class="field__error">{{ errors.estimated_age }}</span>{% endif %}
+      </div>
+
+      <div class="field">
+        <label for="color">Color</label>
+        <input type="text" id="color" name="color" value="{{ form.get('color', '') }}" maxlength="60" placeholder="e.g. Brown & white" />
+        {% if errors.get('color') %}<span class="field__error">{{ errors.color }}</span>{% endif %}
+      </div>
+
+      <div class="field">
+        <label for="weight">Weight (kg)</label>
+        <input type="number" id="weight" name="weight" value="{{ form.get('weight', '') }}" step="0.01" min="0" max="1000" placeholder="e.g. 12.5" />
+        {% if errors.get('weight') %}<span class="field__error">{{ errors.weight }}</span>{% endif %}
+      </div>
+
+      <div class="field">
+        <label for="vaccination_status">Vaccination Status</label>
+        <select id="vaccination_status" name="vaccination_status">
+          <option value="">Select…</option>
+          {% for v in VACCINATION_OPTIONS %}
+            <option value="{{ v }}" {{ 'selected' if form.get('vaccination_status') == v }}>{{ v }}</option>
+          {% endfor %}
+        </select>
+        {% if errors.get('vaccination_status') %}<span class="field__error">{{ errors.vaccination_status }}</span>{% endif %}
+      </div>
+
+      <div class="field">
+        <label for="registration_date">Registration Date</label>
+        <input type="date" id="registration_date" name="registration_date" value="{{ form.get('registration_date', TODAY) }}" max="{{ TODAY }}" />
+        {% if errors.get('registration_date') %}<span class="field__error">{{ errors.registration_date }}</span>{% endif %}
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="form-section">
+    <legend class="form-section__title">Owner Information</legend>
+    <div class="form-grid">
+      <div class="field">
+        <label for="owner_name">Owner Name <abbr title="required">*</abbr></label>
+        <input type="text" id="owner_name" name="owner_name" value="{{ form.get('owner_name', '') }}" required maxlength="120" placeholder="Full name" />
+        {% if errors.get('owner_name') %}<span class="field__error">{{ errors.owner_name }}</span>{% endif %}
+      </div>
+
+      <div class="field">
+        <label for="owner_contact">Contact Number</label>
+        <input type="tel" id="owner_contact" name="owner_contact" value="{{ form.get('owner_contact', '') }}" maxlength="30" placeholder="+1 555 010 2030" />
+        {% if errors.get('owner_contact') %}<span class="field__error">{{ errors.owner_contact }}</span>{% endif %}
+      </div>
+
+      <div class="field">
+        <label for="owner_email">Email</label>
+        <input type="email" id="owner_email" name="owner_email" value="{{ form.get('owner_email', '') }}" maxlength="120" placeholder="owner@example.com" />
+        {% if errors.get('owner_email') %}<span class="field__error">{{ errors.owner_email }}</span>{% endif %}
+      </div>
+
+      <div class="field field--full">
+        <label for="owner_address">Address</label>
+        <input type="text" id="owner_address" name="owner_address" value="{{ form.get('owner_address', '') }}" maxlength="250" placeholder="Street, city, country" />
+        {% if errors.get('owner_address') %}<span class="field__error">{{ errors.owner_address }}</span>{% endif %}
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="form-section">
+    <legend class="form-section__title">Medical &amp; Photo</legend>
+    <div class="form-grid">
+      <div class="field field--full">
+        <label for="medical_notes">Medical Notes</label>
+        <textarea id="medical_notes" name="medical_notes" rows="4" maxlength="1000" placeholder="Allergies, conditions, medications…">{{ form.get('medical_notes', '') }}</textarea>
+        {% if errors.get('medical_notes') %}<span class="field__error">{{ errors.medical_notes }}</span>{% endif %}
+      </div>
+
+      <div class="field field--full">
+        <label for="photo">Pet Photo <span class="hint">(JPG, JPEG, PNG, WEBP · max 5&nbsp;MB)</span></label>
+        <div class="upload-row">
+          <input type="file" id="photo" name="photo" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+          <div class="upload-preview" id="upload-preview" hidden>
+            <img id="upload-preview-img" src="" alt="Preview of the selected photo" />
+            <button class="icon-btn icon-btn--sm" type="button" id="upload-clear" aria-label="Remove selected photo">&times;</button>
+          </div>
+        </div>
+        {% if errors.get('photo') %}<span class="field__error">{{ errors.photo }}</span>{% endif %}
+        <span class="field__hint">Optional. If left empty, the default placeholder image is used.</span>
+      </div>
+    </div>
+  </fieldset>
+
+  <div class="form-actions">
+    <button class="btn btn--primary" type="submit" id="submit-btn">
+      <span class="btn__label">Save Pet Record</span>
+      <span class="btn__spinner" hidden aria-hidden="true"></span>
+    </button>
+    <a class="btn btn--ghost" href="{{ url_for('pet_list') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

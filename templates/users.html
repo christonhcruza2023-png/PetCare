@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">User Management</h1>
+    <p class="page-subtitle">
+      {{ records|length }} account{{ 's' if records|length != 1 }} ·
+      signed in as <strong>{{ current_user.username }}</strong> ({{ role_label }})
+    </p>
+  </div>
+  <a class="btn btn--ghost" href="{{ url_for('dashboard') }}">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to Dashboard
+  </a>
+</div>
+
+<section class="panel">
+  <div class="panel__head">
+    <h2 class="panel__title">Accounts</h2>
+    <span class="muted" style="font-size:12.5px;">
+      Administrators can manage records and users · Viewers can only read
+    </span>
+  </div>
+
+  {% if records %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th scope="col">Account</th>
+          <th scope="col">Username</th>
+          <th scope="col">Email</th>
+          <th scope="col">Role</th>
+          <th scope="col">Joined</th>
+          <th scope="col" class="col-actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in records %}
+        {% set u_role = u.role if u.role in ROLES else 'viewer' %}
+        {% set is_self = u._id == current_user._id %}
+        <tr>
+          <td>
+            <div class="pet-cell">
+              <span class="avatar avatar--sm">{{ u.username[:2]|upper }}</span>
+              <div>
+                <span class="pet-cell__name">{{ u.username }}</span>
+                {% if is_self %}<span class="pet-cell__meta">That's you</span>{% endif %}
+              </div>
+            </div>
+          </td>
+          <td><code class="pet-id">{{ u.username }}</code></td>
+          <td>{{ u.email or '—' }}</td>
+          <td>
+            <span class="badge {{ 'badge--vaccinated' if u_role == 'admin' else 'badge--neutral' }}">
+              {{ ROLE_LABELS.get(u_role, u_role) }}
+            </span>
+          </td>
+          <td>{{ human_date(u.created_at) }}</td>
+          <td class="col-actions">
+            <div class="action-row">
+              <form method="post" action="{{ url_for('user_set_role', user_id=u._id) }}" class="inline-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <input type="hidden" name="role" value="{{ 'viewer' if u_role == 'admin' else 'admin' }}" />
+                <button class="btn btn--outline btn--sm" type="submit"
+                        {{ 'disabled' if is_self and u_role == 'admin' and records|selectattr('role', 'equalto', 'admin')|list|length <= 1 }}
+                        title="{{ 'Promote to Viewer' if u_role == 'admin' else 'Promote to Administrator' }}">
+                  {{ 'Make Viewer' if u_role == 'admin' else 'Make Admin' }}
+                </button>
+              </form>
+
+              <form method="post" action="{{ url_for('user_delete', user_id=u._id) }}" class="inline-form"
+                    data-confirm="delete-user">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button class="btn btn--danger-soft btn--sm" type="submit"
+                        {{ 'disabled' if is_self }}
+                        title="{{ 'You cannot delete your own account' if is_self else 'Delete this account' }}">
+                  Delete
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile card layout -->
+  <div class="card-list">
+    {% for u in records %}
+    {% set u_role = u.role if u.role in ROLES else 'viewer' %}
+    {% set is_self = u._id == current_user._id %}
+    <article class="pet-card">
+      <span class="avatar">{{ u.username[:2]|upper }}</span>
+      <div class="pet-card__body">
+        <div class="pet-card__head">
+          <h3>{{ u.username }}</h3>
+          <span class="badge {{ 'badge--vaccinated' if u_role == 'admin' else 'badge--neutral' }}">
+            {{ ROLE_LABELS.get(u_role, u_role) }}
+          </span>
+        </div>
+        <p class="pet-card__meta">{{ u.email or 'No email' }}</p>
+        <p class="pet-card__meta">Joined {{ human_date(u.created_at) }}</p>
+        <div class="pet-card__foot">
+          <form method="post" action="{{ url_for('user_set_role', user_id=u._id) }}" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <input type="hidden" name="role" value="{{ 'viewer' if u_role == 'admin' else 'admin' }}" />
+            <button class="btn btn--outline btn--sm" type="submit" {{ 'disabled' if is_self and u_role == 'admin' }}>
+              {{ 'Make Viewer' if u_role == 'admin' else 'Make Admin' }}
+            </button>
+          </form>
+          <form method="post" action="{{ url_for('user_delete', user_id=u._id) }}" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button class="btn btn--danger-soft btn--sm" type="submit" {{ 'disabled' if is_self }}>Delete</button>
+          </form>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    </div>
+    <h3>No accounts yet</h3>
+    <p>Accounts appear here as soon as people register.</p>
+    <a class="btn btn--primary" href="{{ url_for('register') }}">Create Account</a>
+  </div>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <div class="panel__head">
+    <h2 class="panel__title">Permission reference</h2>
+  </div>
+  <div class="permission-hint">
+    <ul class="permission-hint__list">
+      <li class="is-allowed">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+        <strong>Administrators</strong> — create, edit and delete pet records, upload photos, and manage accounts.
+      </li>
+      <li class="is-denied">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        <strong>Viewers</strong> — read-only. They can browse the dashboard, search records and open pet profiles, but cannot change anything.
+      </li>
+    </ul>
+    <p class="field__hint">
+      The first account created on a fresh install becomes an administrator.
+      At least one administrator must always remain, so the last one cannot be
+      demoted or deleted.
+    </p>
+  </div>
+</section>
+{% endblock %}

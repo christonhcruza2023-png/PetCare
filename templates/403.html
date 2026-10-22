@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="error-page">
+  <div class="error-page__code" aria-hidden="true">403</div>
+  <h1 class="page-title">Access denied</h1>
+  <p class="page-subtitle">
+    {% if current_user %}
+      You are signed in as
+      <strong>{{ current_user.username }}</strong> ({{ role_label }}),
+      but this action requires the
+      <strong>{{ required_roles|join(' or ') if required_roles else 'Administrator' }}</strong> role.
+    {% else %}
+      You need to sign in before you can perform this action.
+    {% endif %}
+  </p>
+
+  <div class="permission-hint">
+    <p class="permission-hint__title">What your account can do</p>
+    <ul class="permission-hint__list">
+      <li class="is-allowed">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+        View the dashboard, record list and pet profiles
+      </li>
+      <li class="{{ 'is-allowed' if is_admin else 'is-denied' }}">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          {% if is_admin %}<path d="M20 6 9 17l-5-5"/>{% else %}<path d="M18 6 6 18M6 6l12 12"/>{% endif %}
+        </svg>
+        Create, edit and delete pet records
+      </li>
+      <li class="{{ 'is-allowed' if is_admin else 'is-denied' }}">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          {% if is_admin %}<path d="M20 6 9 17l-5-5"/>{% else %}<path d="M18 6 6 18M6 6l12 12"/>{% endif %}
+        </svg>
+        Manage user accounts and roles
+      </li>
+    </ul>
+  </div>
+
+  <div class="empty-state__actions" style="justify-content:center;">
+    {% if not current_user %}
+      <a class="btn btn--primary" href="{{ url_for('login') }}">Sign In</a>
+      <a class="btn btn--soft" href="{{ url_for('register') }}">Create Account</a>
+    {% else %}
+      <a class="btn btn--primary" href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+      <a class="btn btn--soft" href="{{ url_for('pet_list') }}">View Pet Records</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Pet Records</h1>
+    <p class="page-subtitle">
+      {% if total %}{{ total }} record{{ 's' if total != 1 }} found{% else %}No records yet{% endif %}
+    </p>
+  </div>
+  {% if is_admin %}
+  <a class="btn btn--primary" href="{{ url_for('pet_new') }}">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    Add New Pet
+  </a>
+  {% elif not current_user %}
+  <a class="btn btn--soft" href="{{ url_for('login') }}">Sign in to add pets</a>
+  {% endif %}
+</div>
+
+<!-- Toolbar -->
+<form class="toolbar" method="get" action="{{ url_for('pet_list') }}" id="filter-form">
+  <div class="toolbar__search">
+    <label class="sr-only" for="list-search">Search records</label>
+    <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="list-search" type="search" name="q" value="{{ q }}" placeholder="Search by Pet ID, name, breed or owner…" />
+  </div>
+
+  <label class="sr-only" for="filter-animal">Animal type</label>
+  <select id="filter-animal" name="animal" class="select">
+    <option value="" {{ 'selected' if not animal }}>All animal types</option>
+    {% for t in ANIMAL_TYPES %}
+      <option value="{{ t }}" {{ 'selected' if animal == t }}>{{ t }}</option>
+    {% endfor %}
+  </select>
+
+  <label class="sr-only" for="filter-vacc">Vaccination status</label>
+  <select id="filter-vacc" name="vacc" class="select">
+    <option value="" {{ 'selected' if not vacc }}>All vaccination statuses</option>
+    {% for v in VACCINATION_OPTIONS %}
+      <option value="{{ v }}" {{ 'selected' if vacc == v }}>{{ v }}</option>
+    {% endfor %}
+  </select>
+
+  <label class="sr-only" for="filter-sort">Sort by</label>
+  <select id="filter-sort" name="sort" class="select">
+    <option value="newest" {{ 'selected' if sort == 'newest' }}>Newest first</option>
+    <option value="oldest" {{ 'selected' if sort == 'oldest' }}>Oldest first</option>
+    <option value="name_asc" {{ 'selected' if sort == 'name_asc' }}>Name A → Z</option>
+    <option value="name_desc" {{ 'selected' if sort == 'name_desc' }}>Name Z → A</option>
+  </select>
+
+  <label class="sr-only" for="filter-view">Display</label>
+  <select id="filter-view" name="view" class="select">
+    <option value="table" {{ 'selected' if view == 'table' }}>Table view</option>
+    <option value="cards" {{ 'selected' if view == 'cards' }}>Card view</option>
+  </select>
+
+  <button class="btn btn--soft" type="submit">Apply</button>
+  <a class="btn btn--ghost" href="{{ url_for('pet_list') }}">Reset</a>
+</form>
+
+<section class="panel panel--records {{ 'view-cards' if view == 'cards' else 'view-table' }}">
+  {% if records %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th scope="col">Pet</th>
+          <th scope="col">Pet ID</th>
+          <th scope="col">Animal Type</th>
+          <th scope="col">Breed</th>
+          <th scope="col">Owner</th>
+          <th scope="col">Vaccination</th>
+          <th scope="col">Registered</th>
+          <th scope="col" class="col-actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pet in records %}
+        <tr>
+          <td>
+            <div class="pet-cell">
+              <img class="pet-avatar" src="{{ url_for('static', filename='uploads/' + pet.photo_filename) if pet.photo_filename else DEFAULT_PHOTO }}" alt="{{ pet.pet_name }}" loading="lazy" />
+              <div>
+                <span class="pet-cell__name">{{ pet.pet_name }}</span>
+                {% if pet.sex %}<span class="pet-cell__meta">{{ pet.sex }}{% if pet.color %} · {{ pet.color }}{% endif %}</span>{% endif %}
+              </div>
+            </div>
+          </td>
+          <td><code class="pet-id">{{ pet.pet_id }}</code></td>
+          <td>{{ pet.animal_type }}</td>
+          <td>{{ pet.breed or '—' }}</td>
+          <td>{{ pet.owner_name }}</td>
+          <td><span class="badge badge--{{ 'vaccinated' if pet.vaccination_status == 'Vaccinated' else 'partial' if pet.vaccination_status == 'Partially Vaccinated' else 'none' }}">{{ pet.vaccination_status or '—' }}</span></td>
+          <td>{{ human_date(pet.registration_date) }}</td>
+          <td class="col-actions">
+            <div class="action-row">
+              <a class="btn btn--soft btn--sm" href="{{ pet_url(pet) }}" title="View record">View</a>
+              {% if is_admin %}
+              <a class="btn btn--outline btn--sm" href="{{ url_for('pet_edit', pet_id=pet.pet_id) }}" title="Edit record">Edit</a>
+              <button class="btn btn--danger-soft btn--sm js-delete-btn"
+                      type="button"
+                      data-pet-id="{{ pet.pet_id }}"
+                      data-pet-name="{{ pet.pet_name }}"
+                      data-delete-url="{{ url_for('pet_delete', pet_id=pet.pet_id) }}"
+                      title="Delete record">Delete</button>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile card layout -->
+  <div class="card-list">
+    {% for pet in records %}
+    <article class="pet-card">
+      <img class="pet-card__photo" src="{{ url_for('static', filename='uploads/' + pet.photo_filename) if pet.photo_filename else DEFAULT_PHOTO }}" alt="{{ pet.pet_name }}" />
+      <div class="pet-card__body">
+        <div class="pet-card__head">
+          <h3>{{ pet.pet_name }}</h3>
+          <code class="pet-id">{{ pet.pet_id }}</code>
+        </div>
+        <p class="pet-card__meta">{{ pet.animal_type }} · {{ pet.breed or 'Unknown breed' }}</p>
+        <p class="pet-card__meta">Owner: {{ pet.owner_name }}</p>
+        <p class="pet-card__meta">Registered: {{ human_date(pet.registration_date) }}</p>
+        <div class="pet-card__foot">
+          <span class="badge badge--{{ 'vaccinated' if pet.vaccination_status == 'Vaccinated' else 'partial' if pet.vaccination_status == 'Partially Vaccinated' else 'none' }}">{{ pet.vaccination_status or '—' }}</span>
+          <div class="action-row">
+            <a class="btn btn--soft btn--sm" href="{{ pet_url(pet) }}">View</a>
+            {% if is_admin %}
+            <a class="btn btn--outline btn--sm" href="{{ url_for('pet_edit', pet_id=pet.pet_id) }}">Edit</a>
+            <button class="btn btn--danger-soft btn--sm js-delete-btn"
+                    type="button"
+                    data-pet-id="{{ pet.pet_id }}"
+                    data-pet-name="{{ pet.pet_name }}"
+                    data-delete-url="{{ url_for('pet_delete', pet_id=pet.pet_id) }}">Delete</button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  {% if pagination and pagination.total_pages > 1 %}
+  <nav class="pagination" aria-label="Record pages">
+    {% set base = request.args.copy() %}
+    <button class="btn btn--outline btn--sm" type="button"
+            onclick="location.href='{{ url_for('pet_list', page=[pagination.page - 1, 1]|max, **(pagination.retained or {})) }}'"
+            {{ 'disabled' if not pagination.has_prev }}>← Previous</button>
+
+    <span class="pagination__info">
+      Page <strong>{{ pagination.page }}</strong> of <strong>{{ pagination.total_pages }}</strong>
+      · {{ pagination.total }} record{{ 's' if pagination.total != 1 }} total
+      · showing {{ (pagination.page - 1) * pagination.per_page + 1 }}–{{ [(pagination.page) * pagination.per_page, pagination.total]|min }}
+    </span>
+
+    <button class="btn btn--outline btn--sm" type="button"
+            onclick="location.href='{{ url_for('pet_list', page=[pagination.page + 1, pagination.total_pages]|min, **(pagination.retained or {})) }}'"
+            {{ 'disabled' if not pagination.has_next }}>Next →</button>
+  </nav>
+  {% elif records %}
+  <nav class="pagination" aria-label="Record pages">
+    <span class="pagination__info">
+      Showing all {{ pagination.total if pagination else records|length }} record{{ 's' if (pagination.total if pagination else records|length) != 1 }}
+    </span>
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    </div>
+    <h3>No matching records</h3>
+    <p>{{ 'Try adjusting your search or filters.' if (q or animal or vacc) else 'No pets have been registered yet.' }}</p>
+    <div class="empty-state__actions">
+      {% if q or animal or vacc %}
+        <a class="btn btn--soft" href="{{ url_for('pet_list') }}">Clear filters</a>
+      {% endif %}
+      {% if is_admin %}
+      <a class="btn btn--primary" href="{{ url_for('pet_new') }}">+ Add New Pet</a>
+      {% elif not current_user %}
+      <a class="btn btn--primary" href="{{ url_for('login') }}">Sign in to add pets</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

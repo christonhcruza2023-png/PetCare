@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="error-page">
+  <div class="error-page__code" aria-hidden="true">500</div>
+  <h1 class="page-title">Something went wrong</h1>
+  <p class="page-subtitle">An unexpected server error occurred. Please try again in a moment.</p>
+  <div class="empty-state__actions" style="justify-content:center;">
+    <a class="btn btn--primary" href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+  </div>
+</div>
+{% endblock %}

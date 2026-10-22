@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Welcome back 👋</h1>
+    <p class="page-subtitle">Here is what is happening in your pet registry today.</p>
+  </div>
+  {% if is_admin %}
+  <a class="btn btn--primary" href="{{ url_for('pet_new') }}">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    Add New Pet
+  </a>
+  {% elif not current_user %}
+  <a class="btn btn--soft" href="{{ url_for('login') }}">Sign in to add pets</a>
+  {% endif %}
+</div>
+
+<!-- Search shortcuts -->
+<form class="dash-search" role="search" method="get" action="{{ url_for('pet_list') }}">
+  <label class="sr-only" for="dash-search-input">Search records</label>
+  <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+  <input id="dash-search-input" type="search" name="q" placeholder="Search by pet ID, name, breed or owner…" />
+  <button class="btn btn--soft" type="submit">Search</button>
+</form>
+
+<!-- Summary cards -->
+<section class="stat-grid" aria-label="Registry summary">
+  <article class="stat-card">
+    <div class="stat-card__icon stat-card__icon--green">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
+    </div>
+    <div class="stat-card__body">
+      <p class="stat-card__value">{{ stats.total }}</p>
+      <p class="stat-card__label">Total Registered Pets</p>
+    </div>
+  </article>
+
+  <article class="stat-card">
+    <div class="stat-card__icon stat-card__icon--blue">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5.2c.9-1.5 2.6-2.4 4.4-2.4 1.4 0 2.7.6 3.6 1.5l2.5 2.6-2.3 2.1-2-1.2c-.5.9-1.2 1.7-2.1 2.3v3.9H8v-3.9a6 6 0 0 1-2.1-2.3l-2 1.2L1.6 6.9 4.1 4.3"/><path d="M4 21v-4M20 21v-4"/></svg>
+    </div>
+    <div class="stat-card__body">
+      <p class="stat-card__value">{{ stats.dogs }}</p>
+      <p class="stat-card__label">Dogs</p>
+    </div>
+  </article>
+
+  <article class="stat-card">
+    <div class="stat-card__icon stat-card__icon--amber">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6 7 3l3 3h4l3-3 3 3v9a7 7 0 0 1-7 7h-2a7 7 0 0 1-7-7z"/><path d="M9 12h.01M15 12h.01M10 16h4"/></svg>
+    </div>
+    <div class="stat-card__body">
+      <p class="stat-card__value">{{ stats.cats }}</p>
+      <p class="stat-card__label">Cats</p>
+    </div>
+  </article>
+
+  <article class="stat-card">
+    <div class="stat-card__icon stat-card__icon--violet">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v6M8 6l4-3 4 3"/><rect x="4" y="9" width="16" height="12" rx="3"/><path d="M9 14h.01M15 14h.01M9.5 18h5"/></svg>
+    </div>
+    <div class="stat-card__body">
+      <p class="stat-card__value">{{ stats.others }}</p>
+      <p class="stat-card__label">Other Animals</p>
+    </div>
+  </article>
+</section>
+
+<section class="panel">
+  <div class="panel__head">
+    <h2 class="panel__title">Recently Added Pets</h2>
+    <a class="link" href="{{ url_for('pet_list', sort='newest') }}">View all →</a>
+  </div>
+
+  {% if recent_pets %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th scope="col">Pet</th>
+          <th scope="col">Pet ID</th>
+          <th scope="col">Type</th>
+          <th scope="col">Breed</th>
+          <th scope="col">Owner</th>
+          <th scope="col">Vaccination</th>
+          <th scope="col">Registered</th>
+          <th scope="col" class="col-actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pet in recent_pets %}
+        <tr>
+          <td>
+            <div class="pet-cell">
+              <img class="pet-avatar" src="{{ url_for('static', filename='uploads/' + pet.photo_filename) if pet.photo_filename else DEFAULT_PHOTO }}" alt="{{ pet.pet_name }}" loading="lazy" />
+              <div>
+                <span class="pet-cell__name">{{ pet.pet_name }}</span>
+                {% if pet.sex %}<span class="pet-cell__meta">{{ pet.sex }}</span>{% endif %}
+              </div>
+            </div>
+          </td>
+          <td><code class="pet-id">{{ pet.pet_id }}</code></td>
+          <td>{{ pet.animal_type }}</td>
+          <td>{{ pet.breed or '—' }}</td>
+          <td>{{ pet.owner_name }}</td>
+          <td><span class="badge badge--{{ 'vaccinated' if pet.vaccination_status == 'Vaccinated' else 'partial' if pet.vaccination_status == 'Partially Vaccinated' else 'none' }}">{{ pet.vaccination_status or '—' }}</span></td>
+          <td>{{ human_date(pet.registration_date) }}</td>
+          <td class="col-actions">
+            <div class="action-row">
+              <a class="icon-btn icon-btn--sm" href="{{ pet_url(pet) }}" title="View record" aria-label="View {{ pet.pet_name }}">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile card fallback -->
+  <div class="card-list">
+    {% for pet in recent_pets %}
+    <article class="pet-card">
+      <img class="pet-card__photo" src="{{ url_for('static', filename='uploads/' + pet.photo_filename) if pet.photo_filename else DEFAULT_PHOTO }}" alt="{{ pet.pet_name }}" />
+      <div class="pet-card__body">
+        <div class="pet-card__head">
+          <h3>{{ pet.pet_name }}</h3>
+          <code class="pet-id">{{ pet.pet_id }}</code>
+        </div>
+        <p class="pet-card__meta">{{ pet.animal_type }} · {{ pet.breed or 'Unknown breed' }}</p>
+        <p class="pet-card__meta">Owner: {{ pet.owner_name }}</p>
+        <div class="pet-card__foot">
+          <span class="badge badge--{{ 'vaccinated' if pet.vaccination_status == 'Vaccinated' else 'partial' if pet.vaccination_status == 'Partially Vaccinated' else 'none' }}">{{ pet.vaccination_status or '—' }}</span>
+          <a class="btn btn--soft btn--sm" href="{{ pet_url(pet) }}">View</a>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state__icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><ellipse cx="5" cy="11.4" rx="2.2" ry="2.9" transform="rotate(-24 5 11.4)"/><ellipse cx="9.4" cy="7.3" rx="2.3" ry="3" transform="rotate(-8 9.4 7.3)"/><ellipse cx="14.6" cy="7.3" rx="2.3" ry="3" transform="rotate(8 14.6 7.3)"/><ellipse cx="19" cy="11.4" rx="2.2" ry="2.9" transform="rotate(24 19 11.4)"/><path d="M12 12.6c3.5 0 6.2 2.1 6.2 4.6 0 2.4-2.1 4.2-4.5 4.4-1 .1-1.3-.3-1.7-.3s-.7.4-1.7.3C7.8 21.4 5.8 19.6 5.8 17.2c0-2.5 2.7-4.6 6.2-4.6z"/></svg>
+    </div>
+    <h3>No pets registered yet</h3>
+    <p>Start by registering your first animal. It only takes a minute.</p>
+    {% if is_admin %}
+    <a class="btn btn--primary" href="{{ url_for('pet_new') }}">+ Add New Pet</a>
+    {% elif not current_user %}
+    <a class="btn btn--primary" href="{{ url_for('login') }}">Sign in to add pets</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+
+{% if activity %}
+<section class="panel">
+  <div class="panel__head">
+    <h2 class="panel__title">Recent Activity</h2>
+  </div>
+  <ul class="activity-list">
+    {% for item in activity %}
+    <li class="activity-item">
+      <span class="activity-dot activity-dot--{{ item.action }}" aria-hidden="true"></span>
+      <div>
+        <p class="activity-item__text">{{ item.detail }}</p>
+        <time class="activity-item__time">{{ days_ago(item.created_at) or human_date(item.created_at) }}</time>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Decorate activity dots by action type once loaded.
+  document.querySelectorAll('.activity-dot').forEach(function (el) {
+    var cls = Array.from(el.classList).find(function (c) { return c.indexOf('activity-dot--') === 0; });
+    if (cls) el.classList.add('activity-dot--' + cls.split('--')[1]);
+  });
+</script>
+{% endblock %}

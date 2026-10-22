@@ -1,0 +1,7 @@
+Flask>=3.0
+PyMongo>=4.6
+python-dotenv>=1.0
+Werkzeug>=3.0
+Jinja2>=3.1
+Pillow>=10.0
+email-validator>=2.1

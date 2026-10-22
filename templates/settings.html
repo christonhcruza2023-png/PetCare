@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Settings</h1>
+    <p class="page-subtitle">Personalise how PetCare looks and behaves.</p>
+  </div>
+</div>
+
+<form class="panel settings-form" method="post" action="{{ url_for('settings') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+  <fieldset class="form-section">
+    <legend class="form-section__title">Appearance</legend>
+    <div class="settings-row">
+      <div>
+        <p class="settings-row__label">Theme</p>
+        <p class="settings-row__hint">Choose light mode, dark mode, or follow your operating system.</p>
+      </div>
+      <div class="segmented" role="radiogroup" aria-label="Color theme">
+        <label class="segmented__option">
+          <input type="radio" name="theme" value="light"
+                 {{ 'checked' if (form.get('theme', settings.theme) == 'light') }}
+                 data-theme-choice />
+          <span>Light</span>
+        </label>
+        <label class="segmented__option">
+          <input type="radio" name="theme" value="dark"
+                 {{ 'checked' if (form.get('theme', settings.theme) == 'dark') }}
+                 data-theme-choice />
+          <span>Dark</span>
+        </label>
+        <label class="segmented__option">
+          <input type="radio" name="theme" value="system"
+                 {{ 'checked' if (form.get('theme', settings.theme) == 'system') }}
+                 data-theme-choice />
+          <span>System</span>
+        </label>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="form-section">
+    <legend class="form-section__title">Records</legend>
+
+    <div class="settings-row">
+      <div>
+        <p class="settings-row__label">Default sort order</p>
+        <p class="settings-row__hint">Applied whenever you open the Pet Records page without an explicit sort.</p>
+      </div>
+      <select class="select" name="default_sort" aria-label="Default sort order">
+        <option value="newest" {{ 'selected' if form.get('default_sort', settings.default_sort) == 'newest' }}>Newest first</option>
+        <option value="oldest" {{ 'selected' if form.get('default_sort', settings.default_sort) == 'oldest' }}>Oldest first</option>
+        <option value="name_asc" {{ 'selected' if form.get('default_sort', settings.default_sort) == 'name_asc' }}>Name A → Z</option>
+        <option value="name_desc" {{ 'selected' if form.get('default_sort', settings.default_sort) == 'name_desc' }}>Name Z → A</option>
+      </select>
+    </div>
+
+    <div class="settings-row">
+      <div>
+        <p class="settings-row__label">Preferred display</p>
+        <p class="settings-row__hint">Table or card layout on the Pet Records page. You can also switch it from the records toolbar.</p>
+      </div>
+      <div class="segmented" role="radiogroup" aria-label="Preferred display">
+        <label class="segmented__option">
+          <input type="radio" name="default_view" value="table"
+                 {{ 'checked' if form.get('default_view', settings.default_view) == 'table' }} />
+          <span>Table</span>
+        </label>
+        <label class="segmented__option">
+          <input type="radio" name="default_view" value="cards"
+                 {{ 'checked' if form.get('default_view', settings.default_view) == 'cards' }} />
+          <span>Cards</span>
+        </label>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="form-section">
+    <legend class="form-section__title">Profile</legend>
+    <div class="form-grid">
+      <div class="field">
+        <label for="profile_display_name">Display name</label>
+        <input type="text" id="profile_display_name" name="profile_display_name"
+               value="{{ form.get('profile_display_name', settings.profile_display_name) }}"
+               maxlength="80" placeholder="Your name" />
+      </div>
+      <div class="field">
+        <label for="profile_email">Email</label>
+        <input type="email" id="profile_email" name="profile_email"
+               value="{{ form.get('profile_email', settings.profile_email) }}"
+               maxlength="120" placeholder="you@example.com" />
+      </div>
+    </div>
+    <p class="field__hint">Theme preference is saved in this browser (localStorage) and the defaults are stored in MongoDB.</p>
+  </fieldset>
+
+  <div class="form-actions">
+    <button class="btn btn--primary" type="submit">Save Settings</button>
+    <span class="muted">Settings upsert: <code>petcare_db.settings</code></span>
+  </div>
+</form>
+{% endblock %}
